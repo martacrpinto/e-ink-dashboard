@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+:root {
+  --paper: #fbfaf6;
+  --paper-raised: #ffffff;
+  --ink: #14120f;
+  --ink-2: #4d4a44;
+  --ink-3: #8a867d;
+  --rule: #d8d5cc;
+  --rule-strong: #14120f;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #14120f;
+    --paper-raised: #1c1a16;
+    --ink: #ece9e1;
+    --ink-2: #b0aca2;
+    --ink-3: #767268;
+    --rule: #3a372f;
+    --rule-strong: #ece9e1;
+  }
+}
+
+/* /eink is always light, whatever the device preference */
+[data-eink] {
+  --paper: #ffffff;
+  --paper-raised: #ffffff;
+  --ink: #000000;
+  --ink-2: #333333;
+  --ink-3: #666666;
+  --rule: #bbbbbb;
+  --rule-strong: #000000;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-raised: var(--paper-raised);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
