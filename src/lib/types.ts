@@ -33,6 +33,7 @@ export interface ReminderItem {
   due: string | null;
   priority: number; // 0 = none, 1 highest .. 9 lowest
   list: string;
+  tags: string[];
 }
 
 export interface RemindersData {

@@ -42,7 +42,10 @@ Todas as variáveis estão em [`.env.example`](.env.example). Cada integração 
 
 1. Em [account.apple.com](https://account.apple.com) → *Sign-In and Security* → *App-Specific Passwords* → cria uma password nova.
 2. `ICLOUD_EMAIL` = o teu Apple ID; `ICLOUD_APP_PASSWORD` = a password criada.
-3. `REMINDERS_GROCERIES_LIST` e `REMINDERS_DAILY_LIST` = os nomes **exatos** das listas na app Reminders. Se o nome não bater certo, a página /reminders lista os nomes que encontrou.
+3. Escolhe **uma** das duas formas de dizer à app o que mostrar em cada painel:
+   - **Por tag** (`REMINDERS_GROCERIES_TAG`, `REMINDERS_DAILY_TAG`) — usa isto se organizas os Reminders com **Smart Lists** (filtros por tag, como os blocos coloridos no topo da app Reminders). O CalDAV do iCloud não expõe Smart Lists como listas, só a tag em si — preenche com o nome da tag sem o `#` (ex.: `Comida`).
+   - **Por lista** (`REMINDERS_GROCERIES_LIST`, `REMINDERS_DAILY_LIST`) — o nome **exato** de uma lista real do iCloud (ex.: "Família", "Lembretes"). Só é usada se a variável de tag correspondente estiver vazia.
+   - Se o nome/tag não bater certo, a página `/reminders` mostra os nomes de listas que encontrou no iCloud, para ajudar a corrigir.
 
 ### 4. Calendários (ICS)
 

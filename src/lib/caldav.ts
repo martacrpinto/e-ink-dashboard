@@ -13,23 +13,35 @@ function parseTodos(icsData: string, list: string): ReminderItem[] {
     const completed = vtodo.getFirstPropertyValue("completed");
     if (status === "COMPLETED" || status === "CANCELLED" || completed) continue;
     const due = vtodo.getFirstPropertyValue("due");
+    const tags = (vtodo.getFirstProperty("categories")?.getValues() ?? []).map(String);
     items.push({
       id: String(vtodo.getFirstPropertyValue("uid") ?? crypto.randomUUID()),
       title: String(vtodo.getFirstPropertyValue("summary") ?? "(sem título)"),
       due: due ? (due as ICAL.Time).toJSDate().toISOString() : null,
       priority: Number(vtodo.getFirstPropertyValue("priority") ?? 0),
       list,
+      tags,
     });
   }
   return items;
 }
 
+function byPriorityThenTitle(a: ReminderItem, b: ReminderItem): number {
+  return (a.priority || 10) - (b.priority || 10) || a.title.localeCompare(b.title);
+}
+
+// A "list" selector matches a real iCloud list by name; a "tag" selector
+// matches the CATEGORIES property across every list — this is what Apple's
+// Smart Lists (e.g. a "Groceries" tile filtering by a #Comida tag) need,
+// since Smart Lists aren't real CalDAV calendars and never appear in listsFound.
+export type ReminderSelector = { mode: "list"; value: string } | { mode: "tag"; value: string };
+
 const fetchReminders = unstable_cache(
   async (
     email: string,
     password: string,
-    groceriesList: string,
-    dailyList: string,
+    groceries: ReminderSelector,
+    daily: ReminderSelector,
   ): Promise<RemindersData> => {
     const client = await createDAVClient({
       serverUrl: "https://caldav.icloud.com",
@@ -44,41 +56,51 @@ const fetchReminders = unstable_cache(
     );
     const listsFound = todoLists.map((c) => String(c.displayName ?? ""));
 
-    async function loadList(name: string): Promise<ReminderItem[] | null> {
-      const cal = todoLists.find(
-        (c) => String(c.displayName ?? "").toLowerCase() === name.toLowerCase(),
-      );
-      if (!cal) return null;
-      const objects = await client.fetchCalendarObjects({
-        calendar: cal,
-        filters: [
-          {
-            "comp-filter": {
-              _attributes: { name: "VCALENDAR" },
-              "comp-filter": { _attributes: { name: "VTODO" } },
+    const itemsByList = await Promise.all(
+      todoLists.map(async (cal) => {
+        const objects = await client.fetchCalendarObjects({
+          calendar: cal,
+          filters: [
+            {
+              "comp-filter": {
+                _attributes: { name: "VCALENDAR" },
+                "comp-filter": { _attributes: { name: "VTODO" } },
+              },
             },
-          },
-        ],
-      });
-      const items = objects.flatMap((o) =>
-        o.data ? parseTodos(String(o.data), String(cal.displayName ?? name)) : [],
-      );
-      // priority 0 (none) last, then 1..9; ties by title
-      return items.sort(
-        (a, b) =>
-          (a.priority || 10) - (b.priority || 10) || a.title.localeCompare(b.title),
-      );
+          ],
+        });
+        return objects.flatMap((o) =>
+          o.data ? parseTodos(String(o.data), String(cal.displayName ?? "")) : [],
+        );
+      }),
+    );
+    const allItems = itemsByList.flat();
+
+    function resolve(selector: ReminderSelector): ReminderItem[] | null {
+      if (selector.mode === "tag") {
+        const tag = selector.value.toLowerCase();
+        return allItems
+          .filter((item) => item.tags.some((t) => t.toLowerCase() === tag))
+          .sort(byPriorityThenTitle);
+      }
+      const name = selector.value.toLowerCase();
+      const exists = todoLists.some((c) => String(c.displayName ?? "").toLowerCase() === name);
+      if (!exists) return null;
+      return allItems
+        .filter((item) => item.list.toLowerCase() === name)
+        .sort(byPriorityThenTitle);
     }
 
-    const [groceries, daily] = await Promise.all([
-      loadList(groceriesList),
-      loadList(dailyList),
-    ]);
-    return { groceries, daily, listsFound };
+    return { groceries: resolve(groceries), daily: resolve(daily), listsFound };
   },
   ["icloud-reminders"],
   { revalidate: REVALIDATE, tags: ["reminders"] },
 );
+
+function selector(tagEnv: string | undefined, listEnv: string | undefined, defaultList: string): ReminderSelector {
+  if (tagEnv) return { mode: "tag", value: tagEnv };
+  return { mode: "list", value: listEnv ?? defaultList };
+}
 
 export async function getReminders(): Promise<SourceResult<RemindersData>> {
   const email = process.env.ICLOUD_EMAIL;
@@ -92,8 +114,8 @@ export async function getReminders(): Promise<SourceResult<RemindersData>> {
       data: await fetchReminders(
         email,
         password,
-        process.env.REMINDERS_GROCERIES_LIST ?? "Groceries",
-        process.env.REMINDERS_DAILY_LIST ?? "Daily",
+        selector(process.env.REMINDERS_GROCERIES_TAG, process.env.REMINDERS_GROCERIES_LIST, "Groceries"),
+        selector(process.env.REMINDERS_DAILY_TAG, process.env.REMINDERS_DAILY_LIST, "Daily"),
       ),
     };
   } catch (e) {

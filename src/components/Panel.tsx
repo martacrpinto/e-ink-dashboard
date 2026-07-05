@@ -13,7 +13,7 @@ export function Panel({
   className?: string;
 }) {
   return (
-    <section className={`border-2 border-rule-strong bg-paper-raised ${className}`}>
+    <section className={`min-w-0 border-2 border-rule-strong bg-paper-raised ${className}`}>
       <h2 className="flex items-baseline gap-2 border-b-2 border-rule-strong px-4 py-2 font-mono text-xs font-semibold uppercase tracking-[0.15em]">
         {symbol ? <span aria-hidden>{symbol}</span> : null}
         {title}

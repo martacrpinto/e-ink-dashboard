@@ -25,10 +25,18 @@ function List({ items, missing, listsFound }: { items: ReminderItem[] | null; mi
   );
 }
 
+function sourceLabel(tagEnv: string | undefined, listEnv: string | undefined, defaultList: string): string {
+  return tagEnv ? `#${tagEnv}` : (listEnv ?? defaultList);
+}
+
 export default async function RemindersPage() {
   const result = await getReminders();
-  const groceriesName = process.env.REMINDERS_GROCERIES_LIST ?? "Groceries";
-  const dailyName = process.env.REMINDERS_DAILY_LIST ?? "Daily";
+  const groceriesName = sourceLabel(
+    process.env.REMINDERS_GROCERIES_TAG,
+    process.env.REMINDERS_GROCERIES_LIST,
+    "Groceries",
+  );
+  const dailyName = sourceLabel(process.env.REMINDERS_DAILY_TAG, process.env.REMINDERS_DAILY_LIST, "Daily");
 
   return (
     <div className="space-y-6">

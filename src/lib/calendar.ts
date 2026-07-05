@@ -92,9 +92,10 @@ async function getSource(
   source: CalendarEvent["source"],
   envVar: string,
 ): Promise<SourceResult<CalendarEvent[]>> {
-  if (!url) return { status: "unconfigured", hint: `Define ${envVar}` };
+  const trimmed = url?.trim();
+  if (!trimmed) return { status: "unconfigured", hint: `Define ${envVar}` };
   try {
-    return { status: "ok", data: await fetchIcsEvents(url, source) };
+    return { status: "ok", data: await fetchIcsEvents(trimmed, source) };
   } catch (e) {
     return { status: "error", message: e instanceof Error ? e.message : String(e) };
   }
