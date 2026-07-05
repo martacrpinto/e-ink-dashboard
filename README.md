@@ -9,7 +9,7 @@ Dashboard pessoal com estética e-ink (inspirado no [TRMNL](https://usetrmnl.com
 | ▲ Tarefas ad-hoc | Notion — database "Tasks Tracker" |
 | ■ Trabalho | Notion — database "Quick Capture" (P2P) |
 | ● / ○ Calendário | Google Calendar + Outlook (feeds ICS privados) |
-| ◆ Reminders | Apple Reminders via iCloud CalDAV (compras + diárias) |
+| ◆ Reminders | Apple Reminders via um Atalho (Shortcut) no iPhone (compras + diárias) |
 | ☀ Meteo | Open-Meteo (sem chave) |
 
 **Páginas**: `/` (overview de tudo), `/tasks`, `/work`, `/calendar` (7 dias), `/reminders`, `/eink` (800×480). Tudo protegido por password; `/eink` também aceita `?token=` para o dispositivo.
@@ -38,14 +38,37 @@ Todas as variáveis estão em [`.env.example`](.env.example). Cada integração 
 2. No Notion, abre a database **Tasks Tracker** → menu `…` → *Connections* → adiciona a tua integração. Repete para a **Quick Capture** (dentro de "P2P - DB").
 3. Os data source IDs já estão preenchidos no `.env.example` (verificados no workspace).
 
-### 3. Apple Reminders (iCloud CalDAV)
+### 3. Apple Reminders (Atalho/Shortcut no iPhone)
 
-1. Em [account.apple.com](https://account.apple.com) → *Sign-In and Security* → *App-Specific Passwords* → cria uma password nova.
-2. `ICLOUD_EMAIL` = o teu Apple ID; `ICLOUD_APP_PASSWORD` = a password criada.
-3. Escolhe **uma** das duas formas de dizer à app o que mostrar em cada painel:
-   - **Por tag** (`REMINDERS_GROCERIES_TAG`, `REMINDERS_DAILY_TAG`) — usa isto se organizas os Reminders com **Smart Lists** (filtros por tag, como os blocos coloridos no topo da app Reminders). O CalDAV do iCloud não expõe Smart Lists como listas, só a tag em si — preenche com o nome da tag sem o `#` (ex.: `Comida`).
-   - **Por lista** (`REMINDERS_GROCERIES_LIST`, `REMINDERS_DAILY_LIST`) — o nome **exato** de uma lista real do iCloud (ex.: "Família", "Lembretes"). Só é usada se a variável de tag correspondente estiver vazia.
-   - Se o nome/tag não bater certo, a página `/reminders` mostra os nomes de listas que encontrou no iCloud, para ajudar a corrigir.
+O CalDAV do iCloud não tem acesso às listas modernas da app Reminders (Tags, Smart Lists, Secções — tudo isto usa CloudKit, nunca foi ligado ao CalDAV). Por isso, em vez de o servidor ir buscar os dados ao iCloud, é o teu **iPhone** que os envia para cá através de um Atalho.
+
+**3.1. Ligar o armazenamento (uma vez, no Vercel)**
+
+1. No projeto no Vercel → separador **Storage** → **Create Database** → **Blob** → segue os passos (nome à tua escolha, ex. `reminders`)
+2. Depois de criado, o Vercel define automaticamente a variável `BLOB_READ_WRITE_TOKEN` no projeto — não precisas de a copiar à mão
+3. Faz um **Redeploy** para essa variável entrar em vigor
+
+**3.2. Gerar o token secreto do Atalho**
+
+Adiciona `REMINDERS_INGEST_TOKEN` nas Environment Variables do Vercel — qualquer valor aleatório serve, ex.: `openssl rand -hex 16`.
+
+**3.3. Criar o Atalho no iPhone** (repete para "Compras" e para "Diárias")
+
+Na app **Atalhos** (Shortcuts), cria um atalho novo com estas ações:
+
+1. **Localizar Lembretes** ("Find Reminders") — filtra pela tua lista e/ou tag (ex.: Lista é "Reminders" **e** Tag é "Comida"). Ajusta o filtro ao que já usas nas tuas Smart Lists.
+2. **Obter Conteúdo de URL** ("Get Contents of URL"):
+   - URL: `https://o-teu-projeto.vercel.app/api/reminders/ingest/groceries` (usa `daily` no atalho das tarefas diárias)
+   - Método: **POST**
+   - Cabeçalhos (Headers): `Authorization` = `Bearer <REMINDERS_INGEST_TOKEN>`
+   - Corpo do Pedido (Request Body): **JSON**
+   - Adiciona um campo novo: chave `items`, valor = a variável resultante do "Localizar Lembretes" (o Atalho serializa a lista de lembretes automaticamente)
+
+Corre o Atalho manualmente para testar. Para correr sozinho, cria uma **Automação Pessoal** (ex.: "todos os dias às 7h" ou "sempre que abro a app Reminders") a executar este Atalho, com a opção **"Executar Imediatamente"** ativada (para não pedir confirmação).
+
+**3.4. Confirmar que está a funcionar**
+
+Abre `https://o-teu-projeto.vercel.app/reminders/debug` — mostra exatamente os dados que o Atalho enviou da última vez, útil para confirmar que os campos batem certo antes de organizares a automação.
 
 ### 4. Calendários (ICS)
 

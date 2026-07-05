@@ -1,12 +1,13 @@
-import { getRemindersDebug } from "../../../../lib/caldav";
+import { getRemindersDebug } from "../../../../lib/reminders";
 import { SourceState } from "../../../../components/Panel";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Reminders debug" };
 
-// Temporary diagnostic page: shows every calendar the CalDAV account can see
-// (VTODO-capable or not), how many items each VTODO calendar has, and a raw
-// property dump of every item. Delete once the tag-matching mismatch is understood.
+// Diagnostic page for the Shortcuts-based Reminders sync: shows exactly what
+// the last POST to /api/reminders/ingest/[target] stored, so you can confirm
+// the Shortcut is sending the fields the dashboard expects (Title, Due Date,
+// Priority, Completed — see README).
 export default async function RemindersDebugPage() {
   const result = await getRemindersDebug();
   return (
@@ -17,58 +18,19 @@ export default async function RemindersDebugPage() {
           <div className="space-y-6">
             <section>
               <h2 className="font-mono text-xs font-semibold uppercase tracking-widest">
-                URLs da conta
+                Compras (reminders/groceries.json)
               </h2>
               <pre className="mt-2 overflow-x-auto border-2 border-rule-strong bg-paper-raised p-3 text-xs">
-                {JSON.stringify(data.accountUrls, null, 2)}
+                {data.groceries ? JSON.stringify(data.groceries, null, 2) : "Ainda sem dados."}
               </pre>
             </section>
-
             <section>
               <h2 className="font-mono text-xs font-semibold uppercase tracking-widest">
-                PROPFIND em bruto ao calendar-home-set (sem filtros)
+                Diárias (reminders/daily.json)
               </h2>
               <pre className="mt-2 overflow-x-auto border-2 border-rule-strong bg-paper-raised p-3 text-xs">
-                {JSON.stringify(data.rawHomeSetEntries, null, 2)}
+                {data.daily ? JSON.stringify(data.daily, null, 2) : "Ainda sem dados."}
               </pre>
-            </section>
-
-            <section>
-              <h2 className="font-mono text-xs font-semibold uppercase tracking-widest">
-                Todos os calendários vistos pelo CalDAV
-              </h2>
-              <pre className="mt-2 overflow-x-auto border-2 border-rule-strong bg-paper-raised p-3 text-xs">
-                {JSON.stringify(data.allCalendars, null, 2)}
-              </pre>
-            </section>
-
-            <section>
-              <h2 className="font-mono text-xs font-semibold uppercase tracking-widest">
-                Listas VTODO e contagem de itens
-              </h2>
-              <pre className="mt-2 overflow-x-auto border-2 border-rule-strong bg-paper-raised p-3 text-xs">
-                {JSON.stringify(data.todoListCounts, null, 2)}
-              </pre>
-            </section>
-
-            <section>
-              <h2 className="font-mono text-xs font-semibold uppercase tracking-widest">
-                Itens (propriedades em bruto)
-              </h2>
-              {data.items.length === 0 ? (
-                <p className="mt-2">Nenhum item encontrado em nenhuma lista.</p>
-              ) : (
-                <div className="mt-2 space-y-4">
-                  {data.items.map((item, i) => (
-                    <pre
-                      key={i}
-                      className="overflow-x-auto border-2 border-rule-strong bg-paper-raised p-3 text-xs"
-                    >
-                      {JSON.stringify(item, null, 2)}
-                    </pre>
-                  ))}
-                </div>
-              )}
             </section>
           </div>
         )}

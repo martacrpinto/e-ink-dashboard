@@ -32,14 +32,15 @@ export interface ReminderItem {
   title: string;
   due: string | null;
   priority: number; // 0 = none, 1 highest .. 9 lowest
-  list: string;
+  list?: string;
   tags: string[];
 }
 
 export interface RemindersData {
-  groceries: ReminderItem[] | null; // null = list not found
+  groceries: ReminderItem[] | null; // null = the Shortcut has never sent data for this target
   daily: ReminderItem[] | null;
-  listsFound: string[];
+  groceriesUpdatedAt: string | null;
+  dailyUpdatedAt: string | null;
 }
 
 export interface WeatherData {

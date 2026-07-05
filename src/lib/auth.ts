@@ -38,9 +38,7 @@ export async function verifySessionToken(token: string | undefined): Promise<boo
   return diff === 0;
 }
 
-export function passwordMatches(candidate: string): boolean {
-  const real = process.env.DASHBOARD_PASSWORD;
-  if (!real) return false;
+function timingSafeEqual(candidate: string, real: string): boolean {
   const a = new TextEncoder().encode(candidate);
   const b = new TextEncoder().encode(real);
   let diff = a.length ^ b.length;
@@ -48,4 +46,17 @@ export function passwordMatches(candidate: string): boolean {
     diff |= (a[i] ?? 0) ^ (b[i] ?? 0);
   }
   return diff === 0;
+}
+
+export function passwordMatches(candidate: string): boolean {
+  const real = process.env.DASHBOARD_PASSWORD;
+  if (!real) return false;
+  return timingSafeEqual(candidate, real);
+}
+
+/** Verifies the shared secret used by the iOS Shortcut that pushes Reminders data. */
+export function ingestTokenMatches(candidate: string): boolean {
+  const real = process.env.REMINDERS_INGEST_TOKEN;
+  if (!real) return false;
+  return timingSafeEqual(candidate, real);
 }

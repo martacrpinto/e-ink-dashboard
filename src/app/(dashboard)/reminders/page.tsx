@@ -1,19 +1,15 @@
-import { getReminders } from "../../../lib/caldav";
+import { getReminders } from "../../../lib/reminders";
 import { Empty, Panel, SourceState } from "../../../components/Panel";
 import { ReminderRow } from "../../../components/rows";
+import { formatTime } from "../../../lib/fmt";
 import type { ReminderItem } from "../../../lib/types";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Reminders — e-ink dashboard" };
 
-function List({ items, missing, listsFound }: { items: ReminderItem[] | null; missing: string; listsFound: string[] }) {
+function List({ items }: { items: ReminderItem[] | null }) {
   if (items === null) {
-    return (
-      <Empty>
-        Lista “{missing}” não encontrada no iCloud. Listas disponíveis:{" "}
-        {listsFound.join(", ") || "nenhuma"}.
-      </Empty>
-    );
+    return <Empty>Ainda sem dados — corre o Atalho no iPhone pelo menos uma vez.</Empty>;
   }
   if (items.length === 0) return <Empty>Lista vazia. ✨</Empty>;
   return (
@@ -25,18 +21,13 @@ function List({ items, missing, listsFound }: { items: ReminderItem[] | null; mi
   );
 }
 
-function sourceLabel(tagEnv: string | undefined, listEnv: string | undefined, defaultList: string): string {
-  return tagEnv ? `#${tagEnv}` : (listEnv ?? defaultList);
+function UpdatedAt({ iso }: { iso: string | null }) {
+  if (!iso) return null;
+  return <p className="mt-2 text-xs text-ink-3">Atualizado às {formatTime(iso)}</p>;
 }
 
 export default async function RemindersPage() {
   const result = await getReminders();
-  const groceriesName = sourceLabel(
-    process.env.REMINDERS_GROCERIES_TAG,
-    process.env.REMINDERS_GROCERIES_LIST,
-    "Groceries",
-  );
-  const dailyName = sourceLabel(process.env.REMINDERS_DAILY_TAG, process.env.REMINDERS_DAILY_LIST, "Daily");
 
   return (
     <div className="space-y-6">
@@ -44,11 +35,13 @@ export default async function RemindersPage() {
       <SourceState result={result}>
         {(data) => (
           <div className="grid gap-4 md:grid-cols-2">
-            <Panel title={`Compras · ${groceriesName}`}>
-              <List items={data.groceries} missing={groceriesName} listsFound={data.listsFound} />
+            <Panel title="Compras">
+              <List items={data.groceries} />
+              <UpdatedAt iso={data.groceriesUpdatedAt} />
             </Panel>
-            <Panel title={`Diárias · ${dailyName}`}>
-              <List items={data.daily} missing={dailyName} listsFound={data.listsFound} />
+            <Panel title="Diárias">
+              <List items={data.daily} />
+              <UpdatedAt iso={data.dailyUpdatedAt} />
             </Panel>
           </div>
         )}

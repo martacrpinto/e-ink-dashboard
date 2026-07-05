@@ -1,6 +1,6 @@
 import { getAdhocTasks, getWorkTasks } from "../../lib/notion";
 import { getCalendars } from "../../lib/calendar";
-import { getReminders } from "../../lib/caldav";
+import { getReminders } from "../../lib/reminders";
 import { getWeather } from "../../lib/weather";
 import { dayKey, formatDayLong, isOverdue, isToday, todayKey, todayWeekdayEn } from "../../lib/fmt";
 import { Empty, Panel, SourceState, StatTile } from "../../components/Panel";
@@ -105,9 +105,7 @@ export default async function OverviewPage() {
           <SourceState result={reminders}>
             {(data) =>
               data.daily === null ? (
-                <Empty>
-                  Lista não encontrada. Listas disponíveis: {data.listsFound.join(", ") || "nenhuma"}
-                </Empty>
+                <Empty>Ainda sem dados. Corre o Atalho no iPhone.</Empty>
               ) : data.daily.length === 0 ? (
                 <Empty>Tudo feito por hoje.</Empty>
               ) : (
@@ -125,9 +123,7 @@ export default async function OverviewPage() {
           <SourceState result={reminders}>
             {(data) =>
               data.groceries === null ? (
-                <Empty>
-                  Lista não encontrada. Listas disponíveis: {data.listsFound.join(", ") || "nenhuma"}
-                </Empty>
+                <Empty>Ainda sem dados. Corre o Atalho no iPhone.</Empty>
               ) : data.groceries.length === 0 ? (
                 <Empty>Lista de compras vazia.</Empty>
               ) : (

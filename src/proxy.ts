@@ -2,8 +2,10 @@ import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE, verifySessionToken } from "./lib/auth";
 
 // /eink authenticates itself (?token= for the future e-ink device, or the
-// session cookie), so it is excluded from the redirect here.
-const PUBLIC_PATHS = ["/login", "/eink"];
+// session cookie); the ingest route authenticates itself with a bearer
+// token (the iOS Shortcut can't do a browser login). Both are excluded from
+// the cookie check here.
+const PUBLIC_PATHS = ["/login", "/eink", "/api/reminders/ingest"];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { SESSION_COOKIE, verifySessionToken } from "../../lib/auth";
 import { getAdhocTasks, getWorkTasks } from "../../lib/notion";
 import { getCalendars } from "../../lib/calendar";
-import { getReminders } from "../../lib/caldav";
+import { getReminders } from "../../lib/reminders";
 import { getWeather } from "../../lib/weather";
 import { dayKey, formatDayLong, formatTime, isOverdue, isToday, todayKey, todayWeekdayEn } from "../../lib/fmt";
 import { SOURCE_SYMBOL } from "../../components/rows";
