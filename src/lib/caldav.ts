@@ -109,6 +109,8 @@ export interface DebugTodo {
 }
 
 export interface DebugData {
+  accountUrls: { rootUrl?: string; principalUrl?: string; homeUrl?: string };
+  rawHomeSetEntries: { href?: string; displayName: string; resourcetype: string; components: string }[];
   allCalendars: { displayName: string; components: string; url: string }[];
   todoListCounts: { displayName: string; itemCount: number }[];
   items: DebugTodo[];
@@ -130,6 +132,48 @@ export async function getRemindersDebug(): Promise<SourceResult<DebugData>> {
       authMethod: "Basic",
       defaultAccountType: "caldav",
     });
+    // createDAVClient doesn't expose the account it builds internally, so we
+    // ask for a fresh one (cheap: just principal/home-set discovery, no
+    // collection listing) purely to get at rootUrl/principalUrl/homeUrl.
+    const account = await client.createAccount({ account: { accountType: "caldav" } });
+    const accountUrls = {
+      rootUrl: account.rootUrl,
+      principalUrl: account.principalUrl,
+      homeUrl: account.homeUrl,
+    };
+
+    // Raw, unfiltered PROPFIND on the calendar-home-set: shows literally every
+    // entry the server returns at that URL, bypassing fetchCalendars' own
+    // filtering, so we can tell whether a list is missing at discovery time
+    // versus filtered out afterwards.
+    const rawResponses = account.homeUrl
+      ? await client.propfind({
+          url: account.homeUrl,
+          props: {
+            "d:displayname": {},
+            "d:resourcetype": {},
+            "c:supported-calendar-component-set": {},
+          },
+          depth: "1",
+        })
+      : [];
+    const rawHomeSetEntries = rawResponses.map((r) => ({
+      href: r.href,
+      displayName: String(
+        (r.props?.displayname as { _cdata?: string } | string | undefined) &&
+          typeof r.props?.displayname === "object"
+          ? (r.props?.displayname as { _cdata?: string })._cdata
+          : (r.props?.displayname ?? ""),
+      ),
+      resourcetype: JSON.stringify(Object.keys(r.props?.resourcetype ?? {})),
+      components: JSON.stringify(
+        (Array.isArray((r.props?.supportedCalendarComponentSet as { comp?: unknown })?.comp)
+          ? (r.props?.supportedCalendarComponentSet as { comp?: { _attributes?: { name?: string } }[] }).comp
+          : []
+        )?.map((c) => c?._attributes?.name) ?? [],
+      ),
+    }));
+
     const calendars = await client.fetchCalendars();
     const allCalendars = calendars.map((c) => ({
       displayName: String(c.displayName ?? ""),
@@ -173,7 +217,7 @@ export async function getRemindersDebug(): Promise<SourceResult<DebugData>> {
       }
       todoListCounts.push({ displayName: String(cal.displayName ?? ""), itemCount: count });
     }
-    return { status: "ok", data: { allCalendars, todoListCounts, items } };
+    return { status: "ok", data: { accountUrls, rawHomeSetEntries, allCalendars, todoListCounts, items } };
   } catch (e) {
     return { status: "error", message: e instanceof Error ? e.message : String(e) };
   }

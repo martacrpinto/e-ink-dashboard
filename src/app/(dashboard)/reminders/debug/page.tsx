@@ -17,6 +17,24 @@ export default async function RemindersDebugPage() {
           <div className="space-y-6">
             <section>
               <h2 className="font-mono text-xs font-semibold uppercase tracking-widest">
+                URLs da conta
+              </h2>
+              <pre className="mt-2 overflow-x-auto border-2 border-rule-strong bg-paper-raised p-3 text-xs">
+                {JSON.stringify(data.accountUrls, null, 2)}
+              </pre>
+            </section>
+
+            <section>
+              <h2 className="font-mono text-xs font-semibold uppercase tracking-widest">
+                PROPFIND em bruto ao calendar-home-set (sem filtros)
+              </h2>
+              <pre className="mt-2 overflow-x-auto border-2 border-rule-strong bg-paper-raised p-3 text-xs">
+                {JSON.stringify(data.rawHomeSetEntries, null, 2)}
+              </pre>
+            </section>
+
+            <section>
+              <h2 className="font-mono text-xs font-semibold uppercase tracking-widest">
                 Todos os calendários vistos pelo CalDAV
               </h2>
               <pre className="mt-2 overflow-x-auto border-2 border-rule-strong bg-paper-raised p-3 text-xs">
