@@ -1,4 +1,4 @@
-import { head, put } from "@vercel/blob";
+import { get, put } from "@vercel/blob";
 import type { ReminderItem, RemindersData, SourceResult } from "./types";
 
 export type ReminderTarget = "groceries" | "daily";
@@ -68,10 +68,10 @@ function byPriorityThenTitle(a: ReminderItem, b: ReminderItem): number {
 
 async function readBlob(target: ReminderTarget): Promise<StoredPayload | null> {
   try {
-    const meta = await head(blobPath(target));
-    const res = await fetch(meta.url, { cache: "no-store" });
-    if (!res.ok) return null;
-    return (await res.json()) as StoredPayload;
+    const result = await get(blobPath(target), { access: "private" });
+    if (!result || result.statusCode !== 200) return null;
+    const text = await new Response(result.stream).text();
+    return JSON.parse(text) as StoredPayload;
   } catch {
     return null;
   }
@@ -80,7 +80,7 @@ async function readBlob(target: ReminderTarget): Promise<StoredPayload | null> {
 export async function saveReminderItems(target: ReminderTarget, items: unknown[]): Promise<void> {
   const payload: StoredPayload = { updatedAt: new Date().toISOString(), items };
   await put(blobPath(target), JSON.stringify(payload), {
-    access: "public",
+    access: "private",
     addRandomSuffix: false,
     allowOverwrite: true,
     contentType: "application/json",
