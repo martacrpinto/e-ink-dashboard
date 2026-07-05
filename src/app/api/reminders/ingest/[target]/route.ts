@@ -24,14 +24,17 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: "invalid JSON body" }, { status: 400 });
   }
 
-  // Accept either a raw array or `{ items: [...] }` (the shape Shortcuts
-  // naturally produces when you add a dictionary field set to the Reminders
-  // magic variable).
-  const items = Array.isArray(body)
-    ? body
-    : Array.isArray((body as { items?: unknown })?.items)
-      ? (body as { items: unknown[] }).items
-      : null;
+  // Accept a raw array, `{ items: [...] }`, or a single bare object (both at
+  // the top level and inside `items`) — Shortcuts silently unwraps a
+  // one-element list into a plain dictionary when serializing to JSON.
+  const rawItems = Array.isArray(body) ? body : (body as { items?: unknown })?.items;
+  const items = Array.isArray(rawItems)
+    ? rawItems
+    : rawItems && typeof rawItems === "object"
+      ? [rawItems]
+      : body && typeof body === "object" && !("items" in (body as object))
+        ? [body]
+        : null;
   if (!items) {
     return NextResponse.json({ error: "body must be an array or { items: [...] }" }, { status: 400 });
   }
