@@ -88,9 +88,6 @@ export async function saveReminderItems(target: ReminderTarget, items: unknown[]
 }
 
 export async function getReminders(): Promise<SourceResult<RemindersData>> {
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
-    return { status: "unconfigured", hint: "Liga o Vercel Blob ao projeto (Storage → Create Database → Blob)" };
-  }
   try {
     const [groceries, daily] = await Promise.all([readBlob("groceries"), readBlob("daily")]);
     return {
@@ -113,9 +110,6 @@ export interface DebugPayload {
 }
 
 export async function getRemindersDebug(): Promise<SourceResult<DebugPayload>> {
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
-    return { status: "unconfigured", hint: "Liga o Vercel Blob ao projeto (Storage → Create Database → Blob)" };
-  }
   try {
     const [groceries, daily] = await Promise.all([readBlob("groceries"), readBlob("daily")]);
     return { status: "ok", data: { groceries, daily } };
