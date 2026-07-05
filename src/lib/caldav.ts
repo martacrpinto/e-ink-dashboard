@@ -102,6 +102,68 @@ function selector(tagEnv: string | undefined, listEnv: string | undefined, defau
   return { mode: "list", value: listEnv ?? defaultList };
 }
 
+export interface DebugTodo {
+  list: string;
+  title: string;
+  properties: Record<string, string>;
+}
+
+// Undocumented raw dump of every VTODO property, used to diagnose how a
+// given iCloud account actually serializes things like tags over CalDAV
+// (there is no cache here — we want to see the current state every time).
+export async function getRemindersDebug(): Promise<SourceResult<DebugTodo[]>> {
+  const email = process.env.ICLOUD_EMAIL;
+  const password = process.env.ICLOUD_APP_PASSWORD;
+  if (!email || !password) {
+    return { status: "unconfigured", hint: "Define ICLOUD_EMAIL e ICLOUD_APP_PASSWORD" };
+  }
+  try {
+    const client = await createDAVClient({
+      serverUrl: "https://caldav.icloud.com",
+      credentials: { username: email, password },
+      authMethod: "Basic",
+      defaultAccountType: "caldav",
+    });
+    const calendars = await client.fetchCalendars();
+    const todoLists = calendars.filter((c) => (c.components ?? []).includes("VTODO"));
+
+    const results: DebugTodo[] = [];
+    for (const cal of todoLists) {
+      const objects = await client.fetchCalendarObjects({
+        calendar: cal,
+        filters: [
+          {
+            "comp-filter": {
+              _attributes: { name: "VCALENDAR" },
+              "comp-filter": { _attributes: { name: "VTODO" } },
+            },
+          },
+        ],
+      });
+      for (const o of objects) {
+        if (!o.data) continue;
+        const root = new ICAL.Component(ICAL.parse(String(o.data)));
+        for (const vtodo of root.getAllSubcomponents("vtodo")) {
+          const properties: Record<string, string> = {};
+          for (const prop of vtodo.getAllProperties()) {
+            properties[prop.name] = prop.isMultiValue
+              ? JSON.stringify(prop.getValues().map(String))
+              : String(prop.getFirstValue());
+          }
+          results.push({
+            list: String(cal.displayName ?? ""),
+            title: String(vtodo.getFirstPropertyValue("summary") ?? "(sem título)"),
+            properties,
+          });
+        }
+      }
+    }
+    return { status: "ok", data: results };
+  } catch (e) {
+    return { status: "error", message: e instanceof Error ? e.message : String(e) };
+  }
+}
+
 export async function getReminders(): Promise<SourceResult<RemindersData>> {
   const email = process.env.ICLOUD_EMAIL;
   const password = process.env.ICLOUD_APP_PASSWORD;
