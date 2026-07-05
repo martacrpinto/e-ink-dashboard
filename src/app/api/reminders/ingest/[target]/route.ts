@@ -2,6 +2,26 @@ import { NextResponse, type NextRequest } from "next/server";
 import { ingestTokenMatches } from "../../../../../lib/auth";
 import { saveReminderItems, type ReminderTarget } from "../../../../../lib/reminders";
 
+// When a Shortcut builds a list of Dictionaries (one per reminder) and drops
+// it straight into a JSON body field, Shortcuts sometimes serializes each
+// dictionary to its own JSON text and joins them with newlines, instead of
+// nesting them as a real JSON array. Split those back apart here so each
+// reminder becomes its own item; a plain non-JSON string (the even simpler
+// single-item case) passes through untouched as a bare title.
+function expandJsonLines(value: unknown): unknown[] {
+  if (typeof value !== "string") return [value];
+  const lines = value.split("\n").map((l) => l.trim()).filter(Boolean);
+  if (lines.length <= 1) return [value];
+  const parsed = lines.map((line) => {
+    try {
+      return JSON.parse(line);
+    } catch {
+      return line;
+    }
+  });
+  return parsed;
+}
+
 // Called by the iOS Shortcut running on the phone (see README). This route is
 // intentionally excluded from the session-cookie auth in proxy.ts — it has
 // its own bearer-token check, since the Shortcut can't do a browser login.
@@ -34,7 +54,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     body && typeof body === "object" && !Array.isArray(body) && "items" in (body as object)
       ? (body as { items: unknown }).items
       : body;
-  const items = Array.isArray(candidate) ? candidate : [candidate];
+  const items = (Array.isArray(candidate) ? candidate : [candidate]).flatMap(expandJsonLines);
 
   try {
     await saveReminderItems(target as ReminderTarget, items);
