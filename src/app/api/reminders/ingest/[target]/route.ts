@@ -24,20 +24,17 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: "invalid JSON body" }, { status: 400 });
   }
 
-  // Accept a raw array, `{ items: [...] }`, or a single bare object (both at
-  // the top level and inside `items`) — Shortcuts silently unwraps a
-  // one-element list into a plain dictionary when serializing to JSON.
-  const rawItems = Array.isArray(body) ? body : (body as { items?: unknown })?.items;
-  const items = Array.isArray(rawItems)
-    ? rawItems
-    : rawItems && typeof rawItems === "object"
-      ? [rawItems]
-      : body && typeof body === "object" && !("items" in (body as object))
-        ? [body]
-        : null;
-  if (!items) {
-    return NextResponse.json({ error: "body must be an array or { items: [...] }" }, { status: 400 });
-  }
+  // Be maximally lenient about shape: Shortcuts collapses a one-element list
+  // to a bare value (object, or even just a string with the reminder's
+  // title) instead of an array. Accept anything JSON-valid, always ending up
+  // with an array; junk entries are silently dropped later by normalizeItem
+  // rather than rejected here — check /reminders/debug to see exactly what
+  // was received if items don't show up as expected.
+  const candidate =
+    body && typeof body === "object" && !Array.isArray(body) && "items" in (body as object)
+      ? (body as { items: unknown }).items
+      : body;
+  const items = Array.isArray(candidate) ? candidate : [candidate];
 
   try {
     await saveReminderItems(target as ReminderTarget, items);

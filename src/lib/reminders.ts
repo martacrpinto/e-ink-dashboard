@@ -30,6 +30,12 @@ function pick(obj: Record<string, unknown>, keys: string[]): unknown {
 // a few lenient variants so small differences in how the Shortcut is built
 // don't silently drop data.
 function normalizeItem(raw: unknown): ReminderItem | null {
+  // Shortcuts collapses a single-item list to a bare string (just the
+  // reminder's title) instead of a dictionary — treat that as a minimal item.
+  if (typeof raw === "string") {
+    const trimmed = raw.trim();
+    return trimmed ? { id: crypto.randomUUID(), title: trimmed, due: null, priority: 0, tags: [] } : null;
+  }
   if (typeof raw !== "object" || raw === null) return null;
   const obj = raw as Record<string, unknown>;
 
