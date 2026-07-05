@@ -108,10 +108,16 @@ export interface DebugTodo {
   properties: Record<string, string>;
 }
 
+export interface DebugData {
+  allCalendars: { displayName: string; components: string; url: string }[];
+  todoListCounts: { displayName: string; itemCount: number }[];
+  items: DebugTodo[];
+}
+
 // Undocumented raw dump of every VTODO property, used to diagnose how a
 // given iCloud account actually serializes things like tags over CalDAV
 // (there is no cache here — we want to see the current state every time).
-export async function getRemindersDebug(): Promise<SourceResult<DebugTodo[]>> {
+export async function getRemindersDebug(): Promise<SourceResult<DebugData>> {
   const email = process.env.ICLOUD_EMAIL;
   const password = process.env.ICLOUD_APP_PASSWORD;
   if (!email || !password) {
@@ -125,9 +131,15 @@ export async function getRemindersDebug(): Promise<SourceResult<DebugTodo[]>> {
       defaultAccountType: "caldav",
     });
     const calendars = await client.fetchCalendars();
+    const allCalendars = calendars.map((c) => ({
+      displayName: String(c.displayName ?? ""),
+      components: JSON.stringify(c.components ?? []),
+      url: c.url,
+    }));
     const todoLists = calendars.filter((c) => (c.components ?? []).includes("VTODO"));
 
-    const results: DebugTodo[] = [];
+    const items: DebugTodo[] = [];
+    const todoListCounts: { displayName: string; itemCount: number }[] = [];
     for (const cal of todoLists) {
       const objects = await client.fetchCalendarObjects({
         calendar: cal,
@@ -140,25 +152,28 @@ export async function getRemindersDebug(): Promise<SourceResult<DebugTodo[]>> {
           },
         ],
       });
+      let count = 0;
       for (const o of objects) {
         if (!o.data) continue;
         const root = new ICAL.Component(ICAL.parse(String(o.data)));
         for (const vtodo of root.getAllSubcomponents("vtodo")) {
+          count++;
           const properties: Record<string, string> = {};
           for (const prop of vtodo.getAllProperties()) {
             properties[prop.name] = prop.isMultiValue
               ? JSON.stringify(prop.getValues().map(String))
               : String(prop.getFirstValue());
           }
-          results.push({
+          items.push({
             list: String(cal.displayName ?? ""),
             title: String(vtodo.getFirstPropertyValue("summary") ?? "(sem título)"),
             properties,
           });
         }
       }
+      todoListCounts.push({ displayName: String(cal.displayName ?? ""), itemCount: count });
     }
-    return { status: "ok", data: results };
+    return { status: "ok", data: { allCalendars, todoListCounts, items } };
   } catch (e) {
     return { status: "error", message: e instanceof Error ? e.message : String(e) };
   }
