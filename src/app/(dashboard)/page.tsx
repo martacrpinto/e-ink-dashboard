@@ -42,8 +42,9 @@ export default async function OverviewPage() {
           <h1 className="text-3xl font-semibold capitalize sm:text-4xl">{formatDayLong()}</h1>
         </div>
         {weather.status === "ok" ? (
-          <p className="text-sm text-ink-2">
-            <span aria-hidden>{weather.data.glyph}</span> {weather.data.temperature}°
+          <p className="text-xs text-ink-2">
+            {weather.data.label} · {weather.data.tempMin}°/{weather.data.tempMax}° ·{" "}
+            {weather.data.precipitationChance}% chuva
           </p>
         ) : null}
       </div>
