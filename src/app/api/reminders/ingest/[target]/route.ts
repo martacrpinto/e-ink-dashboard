@@ -11,15 +11,16 @@ import { saveReminderItems, type ReminderTarget } from "../../../../../lib/remin
 function expandJsonLines(value: unknown): unknown[] {
   if (typeof value !== "string") return [value];
   const lines = value.split("\n").map((l) => l.trim()).filter(Boolean);
-  if (lines.length <= 1) return [value];
-  const parsed = lines.map((line) => {
+  if (lines.length === 0) return [value];
+  // Try to parse every line (even when there's just one) as JSON; a line
+  // that isn't valid JSON — the plain-title case — passes through as-is.
+  return lines.map((line) => {
     try {
       return JSON.parse(line);
     } catch {
       return line;
     }
   });
-  return parsed;
 }
 
 // Called by the iOS Shortcut running on the phone (see README). This route is
