@@ -42,7 +42,7 @@ export default async function OverviewPage() {
           <h1 className="text-3xl font-semibold capitalize sm:text-4xl">{formatDayLong()}</h1>
         </div>
         {weather.status === "ok" ? (
-          <div className="text-right">
+          <div className="hidden text-right sm:block">
             <p className="text-3xl font-semibold leading-none">
               <span aria-hidden>{weather.data.glyph}</span> {weather.data.temperature}°
             </p>
