@@ -55,7 +55,7 @@ export function EventRow({ event }: { event: CalendarEvent }) {
       <span aria-hidden className="shrink-0 text-xs">
         {SOURCE_SYMBOL[event.source]}
       </span>
-      <span className="w-24 shrink-0 font-mono text-sm tnum text-ink-2">
+      <span className="w-28 shrink-0 whitespace-nowrap font-mono text-sm tnum text-ink-2">
         {event.allDay ? "todo o dia" : `${formatTime(event.start)}–${formatTime(event.end)}`}
       </span>
       <span className="min-w-0 flex-1 truncate">{event.title}</span>
