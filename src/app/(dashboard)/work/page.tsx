@@ -1,6 +1,8 @@
 import { getWorkTasks } from "../../../lib/notion";
+import { getCalendars } from "../../../lib/calendar";
+import { dayKey, todayKey } from "../../../lib/fmt";
 import { Empty, Panel, SourceState } from "../../../components/Panel";
-import { SOURCE_SYMBOL, TaskRow } from "../../../components/rows";
+import { EventRow, SOURCE_SYMBOL, TaskRow } from "../../../components/rows";
 import type { NotionTask } from "../../../lib/types";
 
 export const dynamic = "force-dynamic";
@@ -14,11 +16,32 @@ function byDue(a: NotionTask, b: NotionTask): number {
 }
 
 export default async function WorkPage() {
-  const result = await getWorkTasks();
+  const [result, calendars] = await Promise.all([getWorkTasks(), getCalendars()]);
+  const todaysOutlook =
+    calendars.outlook.status === "ok"
+      ? calendars.outlook.data.filter((e) => dayKey(e.start) === todayKey())
+      : [];
 
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-semibold">■ Trabalho (Quick Capture)</h1>
+
+      <Panel title="Agenda de hoje (Outlook)" symbol={SOURCE_SYMBOL.outlook}>
+        <SourceState result={calendars.outlook}>
+          {() =>
+            todaysOutlook.length === 0 ? (
+              <Empty>Sem eventos hoje.</Empty>
+            ) : (
+              <ul>
+                {todaysOutlook.map((e) => (
+                  <EventRow key={e.id} event={e} />
+                ))}
+              </ul>
+            )
+          }
+        </SourceState>
+      </Panel>
+
       <SourceState result={result}>
         {(tasks) => {
           const inProgress = tasks.filter((t) => t.status === "In progress").sort(byDue);
