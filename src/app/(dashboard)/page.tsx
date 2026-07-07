@@ -83,14 +83,32 @@ export default async function OverviewPage() {
               adhocToday.length + workToday.length === 0 ? (
                 <Empty>Nada marcado para hoje. ✨</Empty>
               ) : (
-                <ul>
-                  {adhocToday.map((t) => (
-                    <TaskRow key={t.id} task={t} symbol={SOURCE_SYMBOL.adhoc} />
-                  ))}
-                  {workToday.map((t) => (
-                    <TaskRow key={t.id} task={t} symbol={SOURCE_SYMBOL.work} />
-                  ))}
-                </ul>
+                <div className="space-y-4">
+                  {adhocToday.length > 0 ? (
+                    <div>
+                      <p className="mb-1 font-mono text-[10px] uppercase tracking-widest text-ink-3">
+                        {SOURCE_SYMBOL.adhoc} Pessoal
+                      </p>
+                      <ul>
+                        {adhocToday.map((t) => (
+                          <TaskRow key={t.id} task={t} symbol={SOURCE_SYMBOL.adhoc} />
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                  {workToday.length > 0 ? (
+                    <div>
+                      <p className="mb-1 font-mono text-[10px] uppercase tracking-widest text-ink-3">
+                        {SOURCE_SYMBOL.work} Trabalho
+                      </p>
+                      <ul>
+                        {workToday.map((t) => (
+                          <TaskRow key={t.id} task={t} symbol={SOURCE_SYMBOL.work} />
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                </div>
               )
             }
           </SourceState>
