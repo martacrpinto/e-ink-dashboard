@@ -26,25 +26,28 @@ function DueBadge({ due }: { due: string | null | undefined }) {
 }
 
 export function TaskRow({ task, symbol }: { task: NotionTask; symbol: string }) {
+  const hasTags = task.status === "In progress" || Boolean(task.priority) || Boolean(task.due);
   return (
-    <li className="flex items-baseline gap-2 border-b border-rule py-2 last:border-b-0">
-      <span aria-hidden className="shrink-0 text-xs">
+    <li className="flex items-start gap-2 border-b border-rule py-2 last:border-b-0">
+      <span aria-hidden className="shrink-0 pt-0.5 text-xs">
         {symbol}
       </span>
-      <span className="min-w-0 flex-1">
-        <a href={task.url} target="_blank" rel="noreferrer" className="hover:underline">
+      <div className="min-w-0 flex-1">
+        <a href={task.url} target="_blank" rel="noreferrer" className="block truncate hover:underline">
           {task.title}
         </a>
-        {task.status === "In progress" ? (
-          <span className="ml-2 border border-rule-strong px-1 font-mono text-[10px] uppercase">
-            em curso
-          </span>
+        {hasTags ? (
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            {task.status === "In progress" ? (
+              <span className="border border-rule-strong px-1 font-mono text-[10px] uppercase">
+                em curso
+              </span>
+            ) : null}
+            {task.priority ? <span className="text-xs text-ink-3">{task.priority}</span> : null}
+            <DueBadge due={task.due} />
+          </div>
         ) : null}
-        {task.priority ? (
-          <span className="ml-2 text-xs text-ink-3">{task.priority}</span>
-        ) : null}
-      </span>
-      <DueBadge due={task.due} />
+      </div>
     </li>
   );
 }
