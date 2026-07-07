@@ -77,38 +77,33 @@ export default async function OverviewPage() {
           )}
         </Panel>
 
-        <Panel title="Tarefas de hoje">
+        <Panel title="Pessoal · hoje" symbol={SOURCE_SYMBOL.adhoc}>
           <SourceState result={adhoc}>
             {() =>
-              adhocToday.length + workToday.length === 0 ? (
+              adhocToday.length === 0 ? (
                 <Empty>Nada marcado para hoje. ✨</Empty>
               ) : (
-                <div className="space-y-4">
-                  {adhocToday.length > 0 ? (
-                    <div>
-                      <p className="mb-1 font-mono text-[10px] uppercase tracking-widest text-ink-3">
-                        {SOURCE_SYMBOL.adhoc} Pessoal
-                      </p>
-                      <ul>
-                        {adhocToday.map((t) => (
-                          <TaskRow key={t.id} task={t} symbol={SOURCE_SYMBOL.adhoc} />
-                        ))}
-                      </ul>
-                    </div>
-                  ) : null}
-                  {workToday.length > 0 ? (
-                    <div>
-                      <p className="mb-1 font-mono text-[10px] uppercase tracking-widest text-ink-3">
-                        {SOURCE_SYMBOL.work} Trabalho
-                      </p>
-                      <ul>
-                        {workToday.map((t) => (
-                          <TaskRow key={t.id} task={t} symbol={SOURCE_SYMBOL.work} />
-                        ))}
-                      </ul>
-                    </div>
-                  ) : null}
-                </div>
+                <ul>
+                  {adhocToday.map((t) => (
+                    <TaskRow key={t.id} task={t} symbol={SOURCE_SYMBOL.adhoc} />
+                  ))}
+                </ul>
+              )
+            }
+          </SourceState>
+        </Panel>
+
+        <Panel title="Trabalho · hoje" symbol={SOURCE_SYMBOL.work}>
+          <SourceState result={work}>
+            {() =>
+              workToday.length === 0 ? (
+                <Empty>Nada marcado para hoje. ✨</Empty>
+              ) : (
+                <ul>
+                  {workToday.map((t) => (
+                    <TaskRow key={t.id} task={t} symbol={SOURCE_SYMBOL.work} />
+                  ))}
+                </ul>
               )
             }
           </SourceState>
