@@ -67,7 +67,7 @@ export default async function OverviewPage() {
         )}
       </Panel>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <Panel title="Diárias" symbol={SOURCE_SYMBOL.reminders}>
           <SourceState result={reminders}>
             {(data) =>
@@ -102,7 +102,7 @@ export default async function OverviewPage() {
           </SourceState>
         </Panel>
 
-        <Panel title="Compras" symbol={SOURCE_SYMBOL.reminders} className="md:col-span-2">
+        <Panel title="Compras" symbol={SOURCE_SYMBOL.reminders}>
           <SourceState result={reminders}>
             {(data) =>
               data.groceries === null ? (
@@ -110,7 +110,7 @@ export default async function OverviewPage() {
               ) : data.groceries.length === 0 ? (
                 <Empty>Lista de compras vazia.</Empty>
               ) : (
-                <ul className="columns-1 gap-8 sm:columns-2 lg:columns-3">
+                <ul>
                   {data.groceries.map((r) => (
                     <li key={r.id} className="flex items-baseline gap-2 border-b border-rule py-2 break-inside-avoid">
                       <span aria-hidden className="font-mono text-sm">☐</span>
