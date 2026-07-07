@@ -59,24 +59,24 @@ export default async function OverviewPage() {
         <StatTile label="Lista de compras" value={groceries ? groceries.length : "—"} />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <Panel title="Agenda de hoje" className="xl:col-span-1">
-          {calendars.google.status !== "ok" && calendars.outlook.status !== "ok" ? (
-            <>
-              <SourceState result={calendars.google}>{() => null}</SourceState>
-              <SourceState result={calendars.outlook}>{() => null}</SourceState>
-            </>
-          ) : todaysEvents.length === 0 ? (
-            <Empty>Sem eventos hoje.</Empty>
-          ) : (
-            <ul>
-              {todaysEvents.map((e) => (
-                <EventRow key={e.id} event={e} />
-              ))}
-            </ul>
-          )}
-        </Panel>
+      <Panel title="Agenda de hoje">
+        {calendars.google.status !== "ok" && calendars.outlook.status !== "ok" ? (
+          <>
+            <SourceState result={calendars.google}>{() => null}</SourceState>
+            <SourceState result={calendars.outlook}>{() => null}</SourceState>
+          </>
+        ) : todaysEvents.length === 0 ? (
+          <Empty>Sem eventos hoje.</Empty>
+        ) : (
+          <ul>
+            {todaysEvents.map((e) => (
+              <EventRow key={e.id} event={e} />
+            ))}
+          </ul>
+        )}
+      </Panel>
 
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <Panel title="Pessoal · hoje" symbol={SOURCE_SYMBOL.adhoc}>
           <SourceState result={adhoc}>
             {() =>
