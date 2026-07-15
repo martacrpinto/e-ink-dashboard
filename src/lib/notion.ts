@@ -54,6 +54,9 @@ const fetchAdhocTasks = unstable_cache(
         urgency: props["Urgency"]?.select?.name ?? null,
         recurring: props["Recouring"]?.checkbox ?? false,
         days: (props["Days"]?.multi_select ?? []).map((o: { name: string }) => o.name),
+        assignees: (props["Assignee"]?.people ?? [])
+          .map((u: { name?: string }) => u.name)
+          .filter((n: string | undefined): n is string => Boolean(n)),
       };
     });
   },
@@ -95,6 +98,12 @@ async function getTasks(
   } catch (e) {
     return { status: "error", message: e instanceof Error ? e.message : String(e) };
   }
+}
+
+/** True when the task's Notion "Assignee" people property includes me. */
+export function isAssignedToMe(task: NotionTask): boolean {
+  const me = (process.env.NOTION_ME_NAME ?? "Marta").toLowerCase();
+  return (task.assignees ?? []).some((n) => n.toLowerCase() === me);
 }
 
 export function getAdhocTasks() {

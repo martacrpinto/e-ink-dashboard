@@ -1,4 +1,4 @@
-import { getAdhocTasks } from "../../lib/notion";
+import { getAdhocTasks, isAssignedToMe } from "../../lib/notion";
 import { getCalendars } from "../../lib/calendar";
 import { getReminders } from "../../lib/reminders";
 import { getWeather } from "../../lib/weather";
@@ -26,7 +26,10 @@ export default async function OverviewPage() {
 
   const weekday = todayWeekdayEn();
   const todaysEvents = calendars.merged.filter((e) => dayKey(e.start) === todayKey());
-  const adhocToday = adhoc.status === "ok" ? adhoc.data.filter((t) => isForToday(t, weekday)) : [];
+  const adhocToday =
+    adhoc.status === "ok"
+      ? adhoc.data.filter((t) => isForToday(t, weekday) && isAssignedToMe(t))
+      : [];
   const groceries = reminders.status === "ok" ? reminders.data.groceries : null;
 
   return (
@@ -70,19 +73,23 @@ export default async function OverviewPage() {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <Panel title="Diárias" symbol={SOURCE_SYMBOL.reminders}>
           <SourceState result={reminders}>
-            {(data) =>
-              data.daily === null ? (
-                <Empty>Ainda sem dados. Corre o Atalho no iPhone.</Empty>
-              ) : data.daily.length === 0 ? (
+            {(data) => {
+              if (data.daily === null) {
+                return <Empty>Ainda sem dados. Corre o Atalho no iPhone.</Empty>;
+              }
+              const dueDaily = data.daily.filter(
+                (r) => r.due && (isToday(r.due) || isOverdue(r.due)),
+              );
+              return dueDaily.length === 0 ? (
                 <Empty>Tudo feito por hoje.</Empty>
               ) : (
                 <ul>
-                  {data.daily.map((r) => (
+                  {dueDaily.map((r) => (
                     <ReminderRow key={r.id} item={r} />
                   ))}
                 </ul>
-              )
-            }
+              );
+            }}
           </SourceState>
         </Panel>
 

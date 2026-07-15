@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { SESSION_COOKIE, verifySessionToken } from "../../lib/auth";
-import { getAdhocTasks, getWorkTasks } from "../../lib/notion";
+import { getAdhocTasks, getWorkTasks, isAssignedToMe } from "../../lib/notion";
 import { getCalendars } from "../../lib/calendar";
 import { getReminders } from "../../lib/reminders";
 import { getWeather } from "../../lib/weather";
@@ -45,14 +45,21 @@ export default async function EinkPage({
     (t.due ? isToday(t.due) || isOverdue(t.due) : false) ||
     (t.recurring && (t.days ?? []).includes(weekday));
   const tasks = [
-    ...(adhoc.status === "ok" ? adhoc.data.filter(forToday).map((t) => ({ ...t, sym: SOURCE_SYMBOL.adhoc })) : []),
+    ...(adhoc.status === "ok"
+      ? adhoc.data.filter((t) => forToday(t) && isAssignedToMe(t)).map((t) => ({ ...t, sym: SOURCE_SYMBOL.adhoc }))
+      : []),
     ...(work.status === "ok"
       ? work.data
           .filter((t) => t.due && (isToday(t.due) || isOverdue(t.due)))
           .map((t) => ({ ...t, sym: SOURCE_SYMBOL.work }))
       : []),
   ].slice(0, 8);
-  const daily = reminders.status === "ok" ? (reminders.data.daily ?? []).slice(0, 8) : [];
+  const daily =
+    reminders.status === "ok"
+      ? (reminders.data.daily ?? [])
+          .filter((r) => r.due && (isToday(r.due) || isOverdue(r.due)))
+          .slice(0, 8)
+      : [];
   const groceriesCount = reminders.status === "ok" ? (reminders.data.groceries?.length ?? 0) : 0;
 
   return (

@@ -15,6 +15,7 @@ export interface NotionTask {
   urgency?: string | null;
   recurring?: boolean;
   days?: string[];
+  assignees?: string[]; // names from the Notion "Assignee" people property
 }
 
 export interface CalendarEvent {
